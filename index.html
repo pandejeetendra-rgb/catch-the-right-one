@@ -3,96 +3,98 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Catch the Right One (Social Engineering)</title>
+  <title>Catch the Right One (4 Balls + Net Catcher)</title>
   <style>
-    * { box-sizing: border-box; }
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      background:#0b1220;
-      color:#e8eefc;
-      overflow:hidden;
-    }
-    #wrap{display:grid;grid-template-rows:auto 1fr auto;height:100vh;width:100vw;}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#081024;color:#eaf0ff;overflow:hidden}
+    #wrap{display:grid;grid-template-rows:auto 1fr auto;height:100vh;width:100vw}
+
     #hud{
       padding:12px 14px 10px;
-      background:linear-gradient(180deg,rgba(12,20,40,.95),rgba(12,20,40,.55));
-      border-bottom:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(180deg,rgba(10,18,40,.96),rgba(10,18,40,.62));
+      border-bottom:1px solid rgba(255,255,255,.10);
     }
-    #row1{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px;}
-    .pill{
-      padding:6px 10px;border-radius:999px;font-size:13px;white-space:nowrap;
-      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-    }
-    #questionBox{
+    #topRow{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap}
+    .pill{padding:6px 10px;border-radius:999px;font-size:13px;white-space:nowrap;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+    #qBox{
       padding:10px 12px;border-radius:12px;
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);
-      font-size:16px;line-height:1.35;max-width:1100px;margin:0 auto;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+      max-width:1100px;margin:0 auto;
     }
-    #questionBox b{color:#fff;}
-    #stage{position:relative;width:100%;height:100%;}
+    #qText{font-size:16px;line-height:1.35}
+    #optList{margin-top:8px;font-size:13px;line-height:1.35;opacity:.95;display:grid;gap:4px}
+    #optList div b{display:inline-block;min-width:22px}
+
+    #stage{position:relative;width:100%;height:100%}
     canvas{
-      width:100%;
-      height:100%;
-      display:block;
-      touch-action:none;
+      width:100%;height:100%;display:block;touch-action:none;
       background:
-        radial-gradient(1200px 600px at 20% 10%, rgba(73,132,255,0.22), transparent 55%),
-        radial-gradient(800px 500px at 85% 40%, rgba(245,124,179,0.18), transparent 55%),
-        linear-gradient(180deg, #0b1220, #071025);
+        radial-gradient(1100px 650px at 15% 8%, rgba(80,140,255,.24), transparent 55%),
+        radial-gradient(800px 520px at 85% 35%, rgba(255,120,180,.18), transparent 55%),
+        linear-gradient(180deg,#081024,#050b18);
     }
+
     #footer{
       padding:10px 14px;
-      background:linear-gradient(0deg,rgba(12,20,40,.95),rgba(12,20,40,.55));
-      border-top:1px solid rgba(255,255,255,.08);
+      background:linear-gradient(0deg,rgba(10,18,40,.96),rgba(10,18,40,.62));
+      border-top:1px solid rgba(255,255,255,.10);
       display:flex;gap:10px;align-items:center;justify-content:space-between;
     }
-    #tips{font-size:12px;opacity:.9;}
-    #btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+    #tips{font-size:12px;opacity:.9}
+    #btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     button{
       appearance:none;border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.10);color:#e8eefc;
+      background:rgba(255,255,255,.10);color:#eaf0ff;
       padding:8px 10px;border-radius:10px;font-size:13px;cursor:pointer;
     }
-    button:hover{background:rgba(255,255,255,.14);}
-    button:active{transform:translateY(1px);}
+    button:hover{background:rgba(255,255,255,.14)}
+    button:active{transform:translateY(1px)}
 
     .overlay{
       position:absolute;inset:0;display:none;align-items:center;justify-content:center;
       padding:18px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+      z-index:5;
     }
-    .overlay.show{display:flex;}
+    .overlay.show{display:flex}
     .card{
-      width:min(720px,96vw);border-radius:16px;padding:16px 16px 14px;
+      width:min(740px,96vw);border-radius:16px;padding:16px 16px 14px;
       background:rgba(15,24,48,.95);border:1px solid rgba(255,255,255,.14);
       box-shadow:0 20px 60px rgba(0,0,0,.35);
     }
-    .card h2{margin:0 0 8px;font-size:18px;}
-    .card p,.card li{font-size:14px;line-height:1.45;opacity:.95;}
-    .card ul{margin:10px 0 0 18px;}
-    .card .row{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;}
-    .muted{opacity:.85;}
+    .card h2{margin:0 0 8px;font-size:18px}
+    .card p,.card li{font-size:14px;line-height:1.45;opacity:.95}
+    .card ul{margin:10px 0 0 18px}
+    .card .row{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap}
+    .muted{opacity:.85}
 
     #bigFeedback{
-      position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);
-      font-size:clamp(26px,4.5vw,46px);font-weight:800;letter-spacing:.5px;
-      padding:10px 16px;border-radius:14px;border:2px solid rgba(255,255,255,.20);
+      position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);
+      font-size:clamp(26px,4.6vw,46px);font-weight:900;
+      padding:10px 16px;border-radius:14px;
+      border:2px solid rgba(255,255,255,.22);
       background:rgba(10,18,36,.60);
       display:none;pointer-events:none;text-align:center;max-width:92vw;
+      z-index:4;
     }
-    @media (max-width:520px){ #questionBox{font-size:15px;} #tips{display:none;} }
+
+    @media(max-width:520px){
+      #qText{font-size:15px}
+      #tips{display:none}
+    }
   </style>
 </head>
-
 <body>
 <div id="wrap">
   <div id="hud">
-    <div id="row1">
+    <div id="topRow">
       <div class="pill" id="scorePill">Score: 0</div>
       <div class="pill" id="progressPill">Question 1 of 12</div>
-      <div class="pill">Catch: 1 option</div>
+      <div class="pill">Catch: 1 ball</div>
     </div>
-    <div id="questionBox"><b>Question:</b> <span id="qText">Press Start to begin.</span></div>
+    <div id="qBox">
+      <div id="qText">Press Start to begin.</div>
+      <div id="optList"></div>
+    </div>
   </div>
 
   <div id="stage">
@@ -101,17 +103,17 @@
 
     <div class="overlay show" id="startOverlay">
       <div class="card">
-        <h2>Catch the Right One (Social Engineering)</h2>
+        <h2>Catch the Right One (4 Balls)</h2>
         <p class="muted">
-          A question appears at the top. Four options will fall. Move the catcher and catch the <b>correct</b> option.
-          You can catch <b>only one</b> option per question. Speed is not important.
+          Four colored balls (A, B, C, D) will fall. Move the player left/right and catch the <b>correct</b> ball in the net.
+          You can catch <b>only one</b> ball per question.
         </p>
         <ul>
           <li><b>Desktop:</b> Left / Right arrow keys</li>
-          <li><b>Mobile:</b> Drag the catcher left or right</li>
+          <li><b>Mobile:</b> Drag anywhere to move the player</li>
         </ul>
         <div class="row">
-          <span class="muted">Tip: Read first, then move.</span>
+          <span class="muted">Tip: Read options first, then catch the correct label.</span>
           <button id="btnStart">Start</button>
         </div>
       </div>
@@ -123,16 +125,14 @@
         <p id="finalLine" class="muted"></p>
         <p id="summaryLine" class="muted"></p>
         <div class="row">
-          <button id="btnReview">Show review</button>
           <button id="btnRestart">Restart</button>
         </div>
-        <div id="reviewBox" style="display:none;margin-top:10px;"></div>
       </div>
     </div>
   </div>
 
   <div id="footer">
-    <div id="tips">Use arrows (desktop) or drag the catcher (mobile). Catch one option only.</div>
+    <div id="tips">Catch the correct ball (A/B/C/D) using arrows or drag.</div>
     <div id="btns">
       <button id="btnPause">Pause</button>
       <button id="btnSkip">Skip</button>
@@ -142,7 +142,9 @@
 </div>
 
 <script>
-/* MCQs used (Social Engineering) */
+/* =========================
+   QUESTIONS (same set)
+========================= */
 const QUESTIONS = [
   { q:"Social engineering is mainly the art of:", options:[
       "Psychologically manipulating people to obtain confidential information",
@@ -194,92 +196,99 @@ const QUESTIONS = [
     ], correctIndex:1, feedback:"Baiting with physical media that may carry a payload." }
 ];
 
+/* =========================
+   SETTINGS
+========================= */
 const SETTINGS = {
   questionsPerSession: Math.min(12, QUESTIONS.length),
-  fallSpeed: 160,      // px/sec (CSS pixels)
-  spawnY: -90,
-  catcherWidth: 240,   // bigger
-  catcherHeight: 46,
-  optionW: 260,
-  optionH: 78,
-  feedbackMs: 650,
-  shakeMs: 220
+  fallSpeed: 170,            // css px/sec
+  spawnY: -80,
+  ballR: 26,
+  catcherNetW: 150,          // net mouth width
+  catcherNetH: 70,           // net height (for collision)
+  playerW: 70,
+  playerH: 110,
+  feedbackMs: 750
 };
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d", { alpha: true });
+const COLORS = [
+  { a:"#ff4d6d", b:"#ff9f1c" }, // A
+  { a:"#34d399", b:"#22c55e" }, // B
+  { a:"#60a5fa", b:"#a78bfa" }, // C
+  { a:"#f59e0b", b:"#fde047" }  // D
+];
 
-/* IMPORTANT FIX:
-   We render in CSS pixels, and only use DPR to scale the backing store.
-*/
-const view = { w: 0, h: 0, dpr: 1 };
-function resizeToCssPixels() {
+const LABELS = ["A","B","C","D"];
+
+/* =========================
+   CANVAS (CSS-pixel world)
+========================= */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d", { alpha:true });
+
+const view = { w:0, h:0, dpr:1 };
+function resizeToCssWorld(){
   const rect = canvas.getBoundingClientRect();
   const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const w = Math.max(1, Math.floor(rect.width));
   const h = Math.max(1, Math.floor(rect.height));
-  if (view.w !== w || view.h !== h || view.dpr !== dpr) {
+  if (w !== view.w || h !== view.h || dpr !== view.dpr){
     view.w = w; view.h = h; view.dpr = dpr;
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // now all drawing uses CSS pixels
+    ctx.setTransform(dpr,0,0,dpr,0,0); // now draw in CSS pixels
   }
 }
 
-/* UI */
-const qTextEl = document.getElementById("qText");
+/* =========================
+   UI
+========================= */
 const scorePill = document.getElementById("scorePill");
 const progressPill = document.getElementById("progressPill");
+const qTextEl = document.getElementById("qText");
+const optListEl = document.getElementById("optList");
 const startOverlay = document.getElementById("startOverlay");
 const endOverlay = document.getElementById("endOverlay");
-const bigFeedback = document.getElementById("bigFeedback");
 const finalLine = document.getElementById("finalLine");
 const summaryLine = document.getElementById("summaryLine");
-const reviewBox = document.getElementById("reviewBox");
+const bigFeedback = document.getElementById("bigFeedback");
+const btnPause = document.getElementById("btnPause");
 
 document.getElementById("btnStart").addEventListener("click", () => {
   startOverlay.classList.remove("show");
   startSession();
 });
 document.getElementById("btnHow").addEventListener("click", () => startOverlay.classList.add("show"));
-
 document.getElementById("btnRestart").addEventListener("click", () => {
   endOverlay.classList.remove("show");
-  reviewBox.style.display = "none";
   startSession();
 });
-document.getElementById("btnReview").addEventListener("click", () => {
-  reviewBox.style.display = (reviewBox.style.display === "none") ? "block" : "none";
-});
-
-const btnPause = document.getElementById("btnPause");
 btnPause.addEventListener("click", () => {
   state.paused = !state.paused;
   btnPause.textContent = state.paused ? "Resume" : "Pause";
 });
-
 document.getElementById("btnSkip").addEventListener("click", () => {
-  if (!state.running || state.awaitingNext) return;
-  recordAttempt(null, false, "Skipped");
-  nextQuestion();
+  if(!state.running || state.awaitingNext) return;
+  state.awaitingNext = true;
+  showFeedback("Skipped", "neutral");
+  setTimeout(nextQuestion, 450);
 });
 
-/* COLORS */
-const OPTION_COLORS = [
-  { a:"#ff4d6d", b:"#ff9f1c" }, // A
-  { a:"#5eead4", b:"#22c55e" }, // B
-  { a:"#60a5fa", b:"#a78bfa" }, // C
-  { a:"#f59e0b", b:"#fde047" }  // D
-];
-
-/* STATE */
+/* =========================
+   GAME STATE
+========================= */
 const state = {
-  running:false, paused:false, awaitingNext:false,
-  score:0, qIndex:0, sessionQuestions:[], current:null,
-  options:[],
-  catcher:{ x:0, y:0 },
+  running:false,
+  paused:false,
+  awaitingNext:false,
+  score:0,
+  qIndex:0,
+  sessionQuestions:[],
+  current:null,
+  balls:[],
+  player:{ x:0, y:0 },
+  // net collision rect (computed)
   input:{ left:false, right:false, dragging:false, targetX:null },
-  fx:{ flash:null, flashT:0, shakeT:0, shakeAmp:0 },
   log:[]
 };
 
@@ -292,12 +301,8 @@ function shuffle(arr){
   return a;
 }
 
-function anchorCatcher() {
-  state.catcher.y = view.h - 16 - SETTINGS.catcherHeight; // always visible
-}
-
 function startSession(){
-  resizeToCssPixels();
+  resizeToCssWorld();
   state.running = true;
   state.paused = false;
   state.awaitingNext = false;
@@ -305,64 +310,73 @@ function startSession(){
   state.score = 0;
   state.qIndex = 0;
   state.log = [];
+
   state.sessionQuestions = shuffle(QUESTIONS).slice(0, SETTINGS.questionsPerSession);
 
-  state.catcher.x = view.w/2;
-  anchorCatcher();
+  state.player.x = view.w/2;
+  anchorPlayer();
 
   loadQuestion(0);
+}
+
+function anchorPlayer(){
+  state.player.y = view.h - SETTINGS.playerH - 10; // always visible
 }
 
 function loadQuestion(idx){
   state.qIndex = idx;
   state.current = state.sessionQuestions[idx];
+  bigFeedback.style.display = "none";
 
   qTextEl.textContent = state.current.q;
+  optListEl.innerHTML = state.current.options.map((t,i)=>(
+    `<div><b>${LABELS[i]}.</b> ${escapeHtml(t)}</div>`
+  )).join("");
+
   scorePill.textContent = `Score: ${state.score}`;
   progressPill.textContent = `Question ${idx+1} of ${state.sessionQuestions.length}`;
 
-  const scale = Math.min(1, view.w / 1100);
-  const ow = Math.floor(SETTINGS.optionW * scale);
-  const oh = Math.floor(SETTINGS.optionH * scale);
+  // 4 falling balls aligned across screen
+  state.balls = [];
+  const r = SETTINGS.ballR;
+  const pad = Math.max(22, view.w * 0.07);
+  const span = view.w - pad*2;
+  const step = span / 3;
 
-  const pad = Math.max(14, Math.floor(view.w * 0.05));
-  const totalW = 4*ow;
-  const gap = Math.max(14, Math.floor((view.w - pad*2 - totalW)/3));
-  const startX = Math.max(pad, (view.w - (4*ow + 3*gap))/2);
-
-  state.options = [];
-  const labels = ["A","B","C","D"];
   for(let i=0;i<4;i++){
-    state.options.push({
-      idx:i, label:labels[i],
-      text: state.current.options[i],
-      x: startX + i*(ow+gap),
-      y: SETTINGS.spawnY,
-      w: ow, h: oh,
-      alive:true
+    state.balls.push({
+      idx:i,
+      label: LABELS[i],
+      x: pad + step*i,
+      y: SETTINGS.spawnY - i*30,   // slight stagger
+      r,
+      alive:true,
+      vy: SETTINGS.fallSpeed
     });
   }
 
   state.awaitingNext = false;
 }
 
-/* INPUT */
+/* =========================
+   INPUT
+========================= */
 window.addEventListener("keydown",(e)=>{
-  if(e.key==="ArrowLeft") state.input.left=true;
-  if(e.key==="ArrowRight") state.input.right=true;
+  if(e.key==="ArrowLeft") state.input.left = true;
+  if(e.key==="ArrowRight") state.input.right = true;
 });
 window.addEventListener("keyup",(e)=>{
-  if(e.key==="ArrowLeft") state.input.left=false;
-  if(e.key==="ArrowRight") state.input.right=false;
+  if(e.key==="ArrowLeft") state.input.left = false;
+  if(e.key==="ArrowRight") state.input.right = false;
 });
 
 function pointerToCssX(clientX){
   const rect = canvas.getBoundingClientRect();
-  return (clientX - rect.left); // CSS pixels
+  return (clientX - rect.left);
 }
 canvas.addEventListener("pointerdown",(e)=>{
   canvas.setPointerCapture(e.pointerId);
-  state.input.dragging=true;
+  state.input.dragging = true;
   state.input.targetX = pointerToCssX(e.clientX);
 });
 canvas.addEventListener("pointermove",(e)=>{
@@ -370,268 +384,297 @@ canvas.addEventListener("pointermove",(e)=>{
   state.input.targetX = pointerToCssX(e.clientX);
 });
 canvas.addEventListener("pointerup",()=>{
-  state.input.dragging=false;
-  state.input.targetX=null;
+  state.input.dragging = false;
+  state.input.targetX = null;
 });
 canvas.addEventListener("pointercancel",()=>{
-  state.input.dragging=false;
-  state.input.targetX=null;
+  state.input.dragging = false;
+  state.input.targetX = null;
 });
 
-/* LOOP */
+/* =========================
+   LOOP
+========================= */
 let last = performance.now();
 requestAnimationFrame(function loop(t){
-  resizeToCssPixels();
-  anchorCatcher();
+  resizeToCssWorld();
+  anchorPlayer();
 
   const dt = Math.min(0.033, (t-last)/1000);
   last = t;
 
   if(state.running && !state.paused) update(dt);
   draw();
+
   requestAnimationFrame(loop);
 });
 
 function update(dt){
-  let targetX = state.catcher.x;
+  // move player
+  let targetX = state.player.x;
   if(state.input.left) targetX -= 900*dt;
   if(state.input.right) targetX += 900*dt;
   if(state.input.targetX != null) targetX = state.input.targetX;
 
-  state.catcher.x += (targetX - state.catcher.x) * Math.min(1, 14*dt);
+  state.player.x += (targetX - state.player.x) * Math.min(1, 14*dt);
 
-  const half = SETTINGS.catcherWidth/2;
-  state.catcher.x = clamp(state.catcher.x, half + 10, view.w - half - 10);
+  // clamp
+  const minX = 45;
+  const maxX = view.w - 45;
+  state.player.x = clamp(state.player.x, minX, maxX);
 
+  // fall balls
   const fall = SETTINGS.fallSpeed * dt;
-  for(const o of state.options){
-    if(!o.alive) continue;
-    o.y += fall;
+  for(const b of state.balls){
+    if(!b.alive) continue;
+    b.y += fall;
   }
 
+  // collision (ball with net mouth rectangle)
   if(!state.awaitingNext){
-    const c = catcherRect();
-    const caught = state.options.find(o => o.alive && rectHit(o, c));
-    if(caught) handleCatch(caught);
+    const net = getNetRect();
+    const hitBall = state.balls.find(b => b.alive && circleRectHit(b, net));
+    if(hitBall) handleCatch(hitBall);
   }
 
-  if(state.fx.flashT>0) state.fx.flashT -= dt;
-  if(state.fx.shakeT>0) state.fx.shakeT -= dt;
+  // if balls fall beyond bottom without catch, still allow (but question stays until one catch)
 }
 
-function handleCatch(opt){
+function handleCatch(ball){
   state.awaitingNext = true;
-  for(const o of state.options) o.alive = false;
+  // remove all balls after one catch
+  for(const b of state.balls) b.alive = false;
 
-  const correct = (opt.idx === state.current.correctIndex);
-
+  const correct = (ball.idx === state.current.correctIndex);
   if(correct){
     state.score += 10;
-    flashFX("correct");
-    showBigFeedback("Correct!", "correct");
+    showFeedback("Correct!", "correct");
   }else{
-    flashFX("wrong");
-    shakeFX();
-    const corrLabel = ["A","B","C","D"][state.current.correctIndex];
-    showBigFeedback(`Wrong! Correct: ${corrLabel}`, "wrong");
+    const corr = LABELS[state.current.correctIndex];
+    showFeedback(`Wrong! Correct: ${corr}`, "wrong");
   }
 
-  recordAttempt(opt, correct);
-  setTimeout(() => nextQuestion(), SETTINGS.feedbackMs);
+  setTimeout(nextQuestion, SETTINGS.feedbackMs);
 }
 
 function nextQuestion(){
-  bigFeedback.style.display="none";
+  bigFeedback.style.display = "none";
   state.awaitingNext = false;
 
   const nxt = state.qIndex + 1;
-  if(nxt >= state.sessionQuestions.length) endSession();
-  else loadQuestion(nxt);
+  if(nxt >= state.sessionQuestions.length){
+    endSession();
+  }else{
+    loadQuestion(nxt);
+  }
 }
 
 function endSession(){
   state.running = false;
   endOverlay.classList.add("show");
-
-  const correctCount = state.log.filter(r=>r.correct).length;
-  finalLine.textContent = `Your score: ${state.score} | Correct: ${correctCount}/${state.sessionQuestions.length}`;
-  summaryLine.textContent =
-    correctCount >= Math.ceil(state.sessionQuestions.length*0.7)
-      ? "Summary: Good understanding. Keep practicing to retain concepts."
-      : "Summary: Needs revision. Review the feedback and try again.";
-
-  reviewBox.innerHTML = state.log.map((r,i)=>{
-    const tag = r.correct ? "✅ Correct" : "❌ Wrong";
-    const chosen = r.chosenLabel ? `${r.chosenLabel}. ${escapeHtml(r.chosenText)}` : "Skipped";
-    const correct = `${r.correctLabel}. ${escapeHtml(r.correctText)}`;
-    const fb = escapeHtml(r.feedback||"");
-    return `
-      <div style="padding:10px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);margin:8px 0;">
-        <div style="font-weight:700;margin-bottom:6px;">Q${i+1}. ${escapeHtml(r.q)}</div>
-        <div style="font-size:13px;line-height:1.45;opacity:.95">
-          <div>${tag}</div>
-          <div><b>Your pick:</b> ${chosen}</div>
-          <div><b>Correct:</b> ${correct}</div>
-          ${fb ? `<div><b>Feedback:</b> ${fb}</div>` : ""}
-        </div>
-      </div>
-    `;
-  }).join("");
+  const total = state.sessionQuestions.length;
+  finalLine.textContent = `Your score: ${state.score} (max ${total*10})`;
+  summaryLine.textContent = state.score >= Math.ceil(total*10*0.7)
+    ? "Summary: Good understanding. Keep practicing."
+    : "Summary: Needs revision. Please review the concepts and try again.";
 }
 
-function recordAttempt(opt, correct, overrideFeedback){
-  const labels = ["A","B","C","D"];
-  const cIdx = state.current.correctIndex;
-  state.log.push({
-    q: state.current.q,
-    correct,
-    chosenLabel: opt ? labels[opt.idx] : null,
-    chosenText: opt ? state.current.options[opt.idx] : null,
-    correctLabel: labels[cIdx],
-    correctText: state.current.options[cIdx],
-    feedback: overrideFeedback || state.current.feedback || ""
-  });
-  scorePill.textContent = `Score: ${state.score}`;
+function showFeedback(text, kind){
+  bigFeedback.textContent = text;
+  bigFeedback.style.display = "block";
+  bigFeedback.style.borderColor =
+    kind==="correct" ? "rgba(46,229,157,.75)" :
+    kind==="wrong" ? "rgba(255,77,109,.75)" : "rgba(255,255,255,.25)";
 }
 
-/* DRAW */
+/* =========================
+   DRAW
+========================= */
 function draw(){
   ctx.clearRect(0,0,view.w,view.h);
 
-  // ground line (visual reference)
+  // subtle ground line so you can see bottom zone
   ctx.save();
-  ctx.globalAlpha = 0.30;
+  ctx.globalAlpha = 0.25;
   ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(0, state.catcher.y + SETTINGS.catcherHeight + 14);
-  ctx.lineTo(view.w, state.catcher.y + SETTINGS.catcherHeight + 14);
+  ctx.moveTo(0, view.h - 6);
+  ctx.lineTo(view.w, view.h - 6);
   ctx.stroke();
   ctx.restore();
 
-  // flash tint
-  if(state.fx.flashT>0 && state.fx.flash){
-    const a = clamp(state.fx.flashT/0.22,0,1)*0.18;
-    ctx.save();
-    ctx.globalAlpha=a;
-    ctx.fillStyle = (state.fx.flash==="correct") ? "#2ee59d" : "#ff4d6d";
-    ctx.fillRect(0,0,view.w,view.h);
-    ctx.restore();
+  // balls
+  for(const b of state.balls){
+    if(!b.alive) continue;
+    drawBall(b);
   }
 
-  for(const o of state.options) if(o.alive) drawOption(o);
-  drawCatcher();
+  // player + net ALWAYS drawn
+  drawPlayerWithNet();
 }
 
-function drawOption(o){
-  const palette = OPTION_COLORS[o.idx];
-  const r = 18;
-
+function drawBall(b){
+  const pal = COLORS[b.idx];
+  // glow
   ctx.save();
   ctx.globalAlpha = 0.22;
-  ctx.fillStyle = palette.a;
+  ctx.fillStyle = pal.a;
   ctx.beginPath();
-  ctx.ellipse(o.x + o.w/2, o.y + o.h/2, o.w*0.58, o.h*0.62, 0, 0, Math.PI*2);
+  ctx.ellipse(b.x, b.y, b.r*1.9, b.r*1.6, 0, 0, Math.PI*2);
   ctx.fill();
   ctx.restore();
 
-  const grad = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
-  grad.addColorStop(0, hexToRgba(palette.a, 0.42));
-  grad.addColorStop(1, hexToRgba(palette.b, 0.22));
+  // ball gradient
+  const g = ctx.createRadialGradient(b.x - b.r*0.3, b.y - b.r*0.3, b.r*0.3, b.x, b.y, b.r);
+  g.addColorStop(0, hexToRgba(pal.b, 0.95));
+  g.addColorStop(1, hexToRgba(pal.a, 0.95));
 
-  roundRect(o.x, o.y, o.w, o.h, r);
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "rgba(255,255,255,0.24)";
-  ctx.stroke();
-
-  const badge = 34;
-  roundRect(o.x + 10, o.y + 10, badge, badge, 10);
-  const bgrad = ctx.createLinearGradient(o.x, o.y, o.x + badge, o.y + badge);
-  bgrad.addColorStop(0, hexToRgba(palette.a, 0.98));
-  bgrad.addColorStop(1, hexToRgba(palette.b, 0.88));
-  ctx.fillStyle = bgrad;
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.28)";
-  ctx.stroke();
-
-  ctx.fillStyle = "#081022";
-  ctx.font = "900 16px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(o.label, o.x + 10 + badge/2, o.y + 10 + badge/2);
-
-  ctx.fillStyle = "rgba(255,255,255,0.96)";
-  ctx.font = "700 14px system-ui, sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "top";
-  const tx = o.x + 10 + badge + 10;
-  const ty = o.y + 12;
-  const maxW = o.w - (10 + badge + 22);
-  wrapText(o.text, tx, ty, maxW, 18);
-}
-
-function drawCatcher(){
-  const w = SETTINGS.catcherWidth;
-  const h = SETTINGS.catcherHeight;
-  const x = state.catcher.x - w/2;
-  const y = state.catcher.y;
-
-  // shadow for contrast
-  ctx.save();
-  ctx.globalAlpha = 0.55;
-  ctx.fillStyle = "rgba(0,0,0,0.45)";
-  roundRect(x+4, y+6, w, h, 18);
-  ctx.fill();
-  ctx.restore();
-
-  // bright catcher
-  const g = ctx.createLinearGradient(x, y, x+w, y+h);
-  g.addColorStop(0, "rgba(0,255,210,0.95)");
-  g.addColorStop(0.5, "rgba(120,120,255,0.95)");
-  g.addColorStop(1, "rgba(255,90,200,0.95)");
-
-  roundRect(x, y, w, h, 18);
+  ctx.beginPath();
+  ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
   ctx.fillStyle = g;
   ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "rgba(255,255,255,0.55)";
-  ctx.stroke();
-
-  // rim
-  roundRect(x + 12, y - 14, w - 24, 18, 12);
-  ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.45)";
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
   ctx.stroke();
 
   // label
-  ctx.fillStyle = "rgba(0,0,0,0.55)";
-  roundRect(x + w/2 - 26, y + 7, 52, h - 14, 12);
+  ctx.fillStyle = "rgba(8,16,36,.85)";
+  ctx.font = "900 16px system-ui, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(b.label, b.x, b.y);
+}
+
+function drawPlayerWithNet(){
+  const px = state.player.x;
+  const py = state.player.y;
+
+  // Player body (simple cartoon)
+  // shadow base
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = "rgba(0,0,0,.45)";
+  ctx.beginPath();
+  ctx.ellipse(px, py + SETTINGS.playerH + 6, 46, 14, 0, 0, Math.PI*2);
   ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,0.98)";
+  ctx.restore();
+
+  // legs
+  ctx.lineWidth = 10;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.beginPath();
+  ctx.moveTo(px - 14, py + 84);
+  ctx.lineTo(px - 22, py + 108);
+  ctx.moveTo(px + 14, py + 84);
+  ctx.lineTo(px + 22, py + 108);
+  ctx.stroke();
+
+  // torso
+  const torsoG = ctx.createLinearGradient(px-30, py+20, px+30, py+80);
+  torsoG.addColorStop(0, "rgba(110,231,183,.95)");
+  torsoG.addColorStop(1, "rgba(96,165,250,.95)");
+  roundRect(px-28, py+30, 56, 56, 16);
+  ctx.fillStyle = torsoG;
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.stroke();
+
+  // head
+  ctx.beginPath();
+  ctx.arc(px, py+18, 18, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(255,255,255,.85)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.stroke();
+
+  // arm holding net (to the right)
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = "rgba(255,255,255,.40)";
+  ctx.beginPath();
+  ctx.moveTo(px+18, py+52);
+  ctx.lineTo(px+48, py+38);
+  ctx.stroke();
+
+  // NET (volleyball-goal style) - very visible
+  const net = getNetRect();
+
+  // net frame
+  const frameG = ctx.createLinearGradient(net.x, net.y, net.x+net.w, net.y+net.h);
+  frameG.addColorStop(0, "rgba(255,90,200,.95)");
+  frameG.addColorStop(1, "rgba(0,255,210,.95)");
+  roundRect(net.x, net.y, net.w, net.h, 14);
+  ctx.fillStyle = "rgba(0,0,0,.25)";
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = frameG;
+  ctx.stroke();
+
+  // net mesh
+  ctx.save();
+  ctx.globalAlpha = 0.65;
+  ctx.strokeStyle = "rgba(255,255,255,.45)";
+  ctx.lineWidth = 1.2;
+
+  const cols = 7, rows = 4;
+  for(let i=1;i<cols;i++){
+    const x = net.x + (net.w/cols)*i;
+    ctx.beginPath();
+    ctx.moveTo(x, net.y+6);
+    ctx.lineTo(x, net.y+net.h-6);
+    ctx.stroke();
+  }
+  for(let j=1;j<rows;j++){
+    const y = net.y + (net.h/rows)*j;
+    ctx.beginPath();
+    ctx.moveTo(net.x+6, y);
+    ctx.lineTo(net.x+net.w-6, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // small “target” marker to prove it exists
+  ctx.save();
+  ctx.globalAlpha = 0.95;
+  ctx.fillStyle = "rgba(255,255,255,.85)";
   ctx.font = "900 12px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("CATCH", x + w/2, y + h/2);
+  ctx.fillText("NET", net.x + net.w/2, net.y + net.h/2);
+  ctx.restore();
 }
 
-/* HELPERS */
-function flashFX(kind){ state.fx.flash=kind; state.fx.flashT=0.22; }
-function shakeFX(){ state.fx.shakeT = SETTINGS.shakeMs/1000; state.fx.shakeAmp = 10; }
-function showBigFeedback(text, kind){
-  bigFeedback.textContent = text;
-  bigFeedback.style.display = "block";
-  bigFeedback.style.borderColor = kind==="correct" ? "rgba(46,229,157,0.70)" : "rgba(255,77,109,0.70)";
+/* =========================
+   COLLISION
+========================= */
+function getNetRect(){
+  // net is attached to player’s right hand
+  const px = state.player.x;
+  const py = state.player.y;
+
+  const w = SETTINGS.catcherNetW;
+  const h = SETTINGS.catcherNetH;
+
+  const x = px + 55;       // offset from torso
+  const y = py + 14;       // aligned near shoulder
+
+  return { x, y, w, h };
 }
-function catcherRect(){
-  const w = SETTINGS.catcherWidth, h = SETTINGS.catcherHeight;
-  return { x: state.catcher.x - w/2, y: state.catcher.y - 10, w, h: h + 18 };
+
+function circleRectHit(c, r){
+  const cx = c.x, cy = c.y;
+  const closestX = clamp(cx, r.x, r.x + r.w);
+  const closestY = clamp(cy, r.y, r.y + r.h);
+  const dx = cx - closestX;
+  const dy = cy - closestY;
+  return (dx*dx + dy*dy) <= (c.r*c.r);
 }
-function rectHit(a,b){
-  return (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y);
-}
+
+/* =========================
+   HELPERS
+========================= */
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 function roundRect(x,y,w,h,r){
   const rr = Math.min(r, w/2, h/2);
@@ -643,25 +686,6 @@ function roundRect(x,y,w,h,r){
   ctx.arcTo(x,y,x+w,y,rr);
   ctx.closePath();
 }
-function wrapText(text, x, y, maxWidth, lineHeight){
-  const words = String(text).split(" ");
-  let line = "", yy = y;
-  for(let n=0;n<words.length;n++){
-    const testLine = line + words[n] + " ";
-    const mw = ctx.measureText(testLine).width;
-    if(mw > maxWidth && n > 0){
-      ctx.fillText(line.trim(), x, yy);
-      line = words[n] + " ";
-      yy += lineHeight;
-    } else line = testLine;
-  }
-  ctx.fillText(line.trim(), x, yy);
-}
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
-  }[m]));
-}
 function hexToRgba(hex, a){
   const h = hex.replace("#","");
   const r = parseInt(h.substring(0,2),16);
@@ -669,11 +693,16 @@ function hexToRgba(hex, a){
   const b = parseInt(h.substring(4,6),16);
   return `rgba(${r},${g},${b},${a})`;
 }
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[m]));
+}
 
-/* Make catcher visible even before start */
-resizeToCssPixels();
-state.catcher.x = view.w/2;
-anchorCatcher();
+/* show a visible player+net even before pressing start */
+resizeToCssWorld();
+state.player.x = view.w/2;
+anchorPlayer();
 draw();
 </script>
 </body>
