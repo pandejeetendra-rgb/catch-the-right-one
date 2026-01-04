@@ -3,140 +3,142 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Catch the Right One (4 Balls + Net Catcher)</title>
+  <title>Catch the Right One – Net Catcher</title>
   <style>
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#081024;color:#eaf0ff;overflow:hidden}
-    #wrap{display:grid;grid-template-rows:auto 1fr auto;height:100vh;width:100vw}
+    body{margin:0;background:#061027;color:#eaf0ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
 
-    #hud{
-      padding:12px 14px 10px;
-      background:linear-gradient(180deg,rgba(10,18,40,.96),rgba(10,18,40,.62));
-      border-bottom:1px solid rgba(255,255,255,.10);
-    }
-    #topRow{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap}
-    .pill{padding:6px 10px;border-radius:999px;font-size:13px;white-space:nowrap;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
-    #qBox{
-      padding:10px 12px;border-radius:12px;
-      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
-      max-width:1100px;margin:0 auto;
-    }
-    #qText{font-size:16px;line-height:1.35}
-    #optList{margin-top:8px;font-size:13px;line-height:1.35;opacity:.95;display:grid;gap:4px}
-    #optList div b{display:inline-block;min-width:22px}
-
-    #stage{position:relative;width:100%;height:100%}
-    canvas{
-      width:100%;height:100%;display:block;touch-action:none;
+    /* FIX: canvas does not depend on parent height (works in iframes/LMS) */
+    #game{
+      position:fixed; inset:0;
+      width:100vw; height:100vh;
+      display:block; touch-action:none;
       background:
         radial-gradient(1100px 650px at 15% 8%, rgba(80,140,255,.24), transparent 55%),
         radial-gradient(800px 520px at 85% 35%, rgba(255,120,180,.18), transparent 55%),
-        linear-gradient(180deg,#081024,#050b18);
+        linear-gradient(180deg,#061027,#040916);
+      z-index:0;
     }
 
+    #hud{
+      position:fixed; left:0; right:0; top:0;
+      padding:10px 12px;
+      background:linear-gradient(180deg,rgba(10,18,40,.95),rgba(10,18,40,.55));
+      border-bottom:1px solid rgba(255,255,255,.10);
+      z-index:3;
+    }
+    #row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .pill{padding:6px 10px;border-radius:999px;font-size:13px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+    #qBox{
+      margin-top:8px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.12);
+      max-width:1100px;
+    }
+    #qText{font-size:15px;line-height:1.35}
+    #optList{margin-top:8px;font-size:13px;line-height:1.35;opacity:.95;display:grid;gap:4px}
+    #optList b{display:inline-block;min-width:22px}
+
     #footer{
-      padding:10px 14px;
-      background:linear-gradient(0deg,rgba(10,18,40,.96),rgba(10,18,40,.62));
+      position:fixed; left:0; right:0; bottom:0;
+      padding:10px 12px;
+      background:linear-gradient(0deg,rgba(10,18,40,.95),rgba(10,18,40,.55));
       border-top:1px solid rgba(255,255,255,.10);
-      display:flex;gap:10px;align-items:center;justify-content:space-between;
+      display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+      z-index:3;
     }
     #tips{font-size:12px;opacity:.9}
     #btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
     button{
-      appearance:none;border:1px solid rgba(255,255,255,.18);
-      background:rgba(255,255,255,.10);color:#eaf0ff;
-      padding:8px 10px;border-radius:10px;font-size:13px;cursor:pointer;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.10);
+      color:#eaf0ff;
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:13px;
+      cursor:pointer;
     }
-    button:hover{background:rgba(255,255,255,.14)}
-    button:active{transform:translateY(1px)}
 
-    .overlay{
-      position:absolute;inset:0;display:none;align-items:center;justify-content:center;
-      padding:18px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+    #overlay{
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      padding:18px;
+      background:rgba(0,0,0,.55);
+      backdrop-filter: blur(6px);
       z-index:5;
     }
-    .overlay.show{display:flex}
-    .card{
-      width:min(740px,96vw);border-radius:16px;padding:16px 16px 14px;
-      background:rgba(15,24,48,.95);border:1px solid rgba(255,255,255,.14);
+    #card{
+      width:min(760px,96vw);
+      border-radius:16px;
+      padding:16px;
+      background:rgba(15,24,48,.95);
+      border:1px solid rgba(255,255,255,.14);
       box-shadow:0 20px 60px rgba(0,0,0,.35);
     }
-    .card h2{margin:0 0 8px;font-size:18px}
-    .card p,.card li{font-size:14px;line-height:1.45;opacity:.95}
-    .card ul{margin:10px 0 0 18px}
-    .card .row{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap}
-    .muted{opacity:.85}
+    #card h2{margin:0 0 8px;font-size:18px}
+    #card p,#card li{margin:0; font-size:14px; line-height:1.45; opacity:.95}
+    #card ul{margin:10px 0 0 18px}
+    #card .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px}
 
     #bigFeedback{
-      position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);
-      font-size:clamp(26px,4.6vw,46px);font-weight:900;
-      padding:10px 16px;border-radius:14px;
+      position:fixed; left:50%; top:52%;
+      transform:translate(-50%,-50%);
+      font-size:clamp(26px,4.6vw,46px);
+      font-weight:900;
+      padding:10px 16px;
+      border-radius:14px;
       border:2px solid rgba(255,255,255,.22);
       background:rgba(10,18,36,.60);
-      display:none;pointer-events:none;text-align:center;max-width:92vw;
+      display:none;
       z-index:4;
-    }
-
-    @media(max-width:520px){
-      #qText{font-size:15px}
-      #tips{display:none}
+      text-align:center;
+      max-width:92vw;
     }
   </style>
 </head>
 <body>
-<div id="wrap">
-  <div id="hud">
-    <div id="topRow">
-      <div class="pill" id="scorePill">Score: 0</div>
-      <div class="pill" id="progressPill">Question 1 of 12</div>
-      <div class="pill">Catch: 1 ball</div>
-    </div>
-    <div id="qBox">
-      <div id="qText">Press Start to begin.</div>
-      <div id="optList"></div>
-    </div>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="row">
+    <div class="pill" id="scorePill">Score: 0</div>
+    <div class="pill" id="progressPill">Question 1 of 12</div>
+    <div class="pill">Catch: 1 ball</div>
   </div>
-
-  <div id="stage">
-    <canvas id="game"></canvas>
-    <div id="bigFeedback"></div>
-
-    <div class="overlay show" id="startOverlay">
-      <div class="card">
-        <h2>Catch the Right One (4 Balls)</h2>
-        <p class="muted">
-          Four colored balls (A, B, C, D) will fall. Move the player left/right and catch the <b>correct</b> ball in the net.
-          You can catch <b>only one</b> ball per question.
-        </p>
-        <ul>
-          <li><b>Desktop:</b> Left / Right arrow keys</li>
-          <li><b>Mobile:</b> Drag anywhere to move the player</li>
-        </ul>
-        <div class="row">
-          <span class="muted">Tip: Read options first, then catch the correct label.</span>
-          <button id="btnStart">Start</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="overlay" id="endOverlay">
-      <div class="card">
-        <h2>Session Completed</h2>
-        <p id="finalLine" class="muted"></p>
-        <p id="summaryLine" class="muted"></p>
-        <div class="row">
-          <button id="btnRestart">Restart</button>
-        </div>
-      </div>
-    </div>
+  <div id="qBox">
+    <div id="qText">Press Start to begin.</div>
+    <div id="optList"></div>
   </div>
+</div>
 
-  <div id="footer">
-    <div id="tips">Catch the correct ball (A/B/C/D) using arrows or drag.</div>
-    <div id="btns">
-      <button id="btnPause">Pause</button>
-      <button id="btnSkip">Skip</button>
-      <button id="btnHow">How to play</button>
+<div id="bigFeedback"></div>
+
+<div id="footer">
+  <div id="tips">Move left/right (arrows) or drag. Catch correct ball A/B/C/D in the net.</div>
+  <div id="btns">
+    <button id="pauseBtn">Pause</button>
+    <button id="skipBtn">Skip</button>
+    <button id="howBtn">How to play</button>
+  </div>
+</div>
+
+<div id="overlay">
+  <div id="card">
+    <h2>Catch the Right One (4 Falling Balls)</h2>
+    <p>
+      Four colored balls labelled <b>A, B, C, D</b> will fall. Move the player and catch the <b>correct</b> ball in the net.
+      Only <b>one catch</b> per question.
+    </p>
+    <ul>
+      <li><b>Desktop:</b> Left / Right arrow keys</li>
+      <li><b>Mobile:</b> Drag anywhere on the screen</li>
+    </ul>
+    <div class="row">
+      <span style="opacity:.85">Tip: read options, then catch the label.</span>
+      <button id="startBtn">Start</button>
     </div>
   </div>
 </div>
@@ -151,66 +153,52 @@ const QUESTIONS = [
       "Upgrading hardware to stop viruses",
       "Encrypting every file on a device",
       "Writing code to exploit buffer overflow"
-    ], correctIndex:0, feedback:"It targets humans, not the technology." },
+    ], correctIndex:0 },
   { q:"Which phase in the social engineering attack cycle comes first?", options:[
       "Exploit trust factor","Research","Cloak activities","Utilise & execute"
-    ], correctIndex:1, feedback:"Attackers start by gathering info about the target." },
+    ], correctIndex:1 },
   { q:"'Developing rapport and trust' mainly aims to:", options:[
       "Install malware automatically","Make the victim doubt all coworkers","Increase bandwidth for the attacker",
       "Make the target more likely to share information or do a requested action"
-    ], correctIndex:3, feedback:"Trust increases compliance and information sharing." },
+    ], correctIndex:3 },
   { q:"Using an established relationship to get the desired info/action is:", options:[
       "Exploiting trust factor","Evolve/regress","Research","Waste management"
-    ], correctIndex:0, feedback:"This is where trust is used against the victim." },
+    ], correctIndex:0 },
   { q:"Social engineering attacks are broadly split into:", options:[
       "Hardware, software, firmware","Physical, remote, and hybrid","Email, SMS, and VoIP only","Open-source, closed-source, freeware"
-    ], correctIndex:1, feedback:"The unit groups them as physical, remote and hybrid." },
+    ], correctIndex:1 },
   { q:"Piggybacking refers to:", options:[
       "Entering a restricted area by convincing/using an authorized person","Listening to private conversations",
       "Throwing documents into the trash","Sending fake bank emails"
-    ], correctIndex:0, feedback:"Physical access using someone else’s authorization." },
+    ], correctIndex:0 },
   { q:"Obtaining information from discarded papers/devices is:", options:[
       "Impersonation","Dumpster driving","Vishing","Pop-up interception"
-    ], correctIndex:1, feedback:"Dumpster driving exploits poor disposal practices." },
+    ], correctIndex:1 },
   { q:"Reverse social engineering is:", options:[
       "Victim asks attacker for help due to a scenario created by attacker","Attacker deletes evidence immediately after entry",
       "Attacker uses only email and never phone","Victim uses strong passwords to stop phishing"
-    ], correctIndex:0, feedback:"Attacker creates a problem then offers ‘help’." },
+    ], correctIndex:0 },
   { q:"Phishing is a bait-and-hook approach where:", options:[
       "Bait is a USB drive and hook is a printer",
       "Bait is the email message and hook is how victim’s information is captured",
       "Bait is strong encryption and hook is a firewall",
       "Bait is a password policy and hook is a data label"
-    ], correctIndex:1, feedback:"Email lures victims; links/sites/calls capture data." },
+    ], correctIndex:1 },
   { q:"Customized phishing targeted at one person is called:", options:[
       "Whale phishing","419 scam","Spear phishing","Diversion theft"
-    ], correctIndex:2, feedback:"Spear phishing is targeted and uses prior research." },
+    ], correctIndex:2 },
   { q:"Phone/IVR phishing is also known as:", options:[
       "Vishing","Smishing","Eavesdropping","Piggybacking"
-    ], correctIndex:0, feedback:"Vishing uses voice calls/IVR to trick users." },
+    ], correctIndex:0 },
   { q:"A 'road apple' attack usually involves:", options:[
       "Repeated false alarms to reduce response later",
       "Leaving a storage device (USB/CD) hoping staff plug it in",
       "Pretending to be speech-impaired on a call",
       "Redirecting victim to a bank’s real website"
-    ], correctIndex:1, feedback:"Baiting with physical media that may carry a payload." }
+    ], correctIndex:1 }
 ];
 
-/* =========================
-   SETTINGS
-========================= */
-const SETTINGS = {
-  questionsPerSession: Math.min(12, QUESTIONS.length),
-  fallSpeed: 170,            // css px/sec
-  spawnY: -80,
-  ballR: 26,
-  catcherNetW: 150,          // net mouth width
-  catcherNetH: 70,           // net height (for collision)
-  playerW: 70,
-  playerH: 110,
-  feedbackMs: 750
-};
-
+const LABELS = ["A","B","C","D"];
 const COLORS = [
   { a:"#ff4d6d", b:"#ff9f1c" }, // A
   { a:"#34d399", b:"#22c55e" }, // B
@@ -218,178 +206,185 @@ const COLORS = [
   { a:"#f59e0b", b:"#fde047" }  // D
 ];
 
-const LABELS = ["A","B","C","D"];
-
 /* =========================
-   CANVAS (CSS-pixel world)
+   CANVAS (full screen, DPR safe)
 ========================= */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d", { alpha:true });
 
 const view = { w:0, h:0, dpr:1 };
-function resizeToCssWorld(){
-  const rect = canvas.getBoundingClientRect();
+function resize() {
   const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-  const w = Math.max(1, Math.floor(rect.width));
-  const h = Math.max(1, Math.floor(rect.height));
-  if (w !== view.w || h !== view.h || dpr !== view.dpr){
-    view.w = w; view.h = h; view.dpr = dpr;
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0); // now draw in CSS pixels
+  const w = Math.max(1, Math.floor(window.innerWidth));
+  const h = Math.max(1, Math.floor(window.innerHeight));
+  if (w!==view.w || h!==view.h || dpr!==view.dpr) {
+    view.w=w; view.h=h; view.dpr=dpr;
+    canvas.width = Math.floor(w*dpr);
+    canvas.height = Math.floor(h*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0); // draw in CSS pixels
   }
 }
+window.addEventListener("resize", resize);
+resize();
 
 /* =========================
-   UI
+   UI bindings
 ========================= */
+const overlay = document.getElementById("overlay");
+const startBtn = document.getElementById("startBtn");
+const howBtn = document.getElementById("howBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const skipBtn = document.getElementById("skipBtn");
+const bigFeedback = document.getElementById("bigFeedback");
+
 const scorePill = document.getElementById("scorePill");
 const progressPill = document.getElementById("progressPill");
 const qTextEl = document.getElementById("qText");
 const optListEl = document.getElementById("optList");
-const startOverlay = document.getElementById("startOverlay");
-const endOverlay = document.getElementById("endOverlay");
-const finalLine = document.getElementById("finalLine");
-const summaryLine = document.getElementById("summaryLine");
-const bigFeedback = document.getElementById("bigFeedback");
-const btnPause = document.getElementById("btnPause");
 
-document.getElementById("btnStart").addEventListener("click", () => {
-  startOverlay.classList.remove("show");
-  startSession();
-});
-document.getElementById("btnHow").addEventListener("click", () => startOverlay.classList.add("show"));
-document.getElementById("btnRestart").addEventListener("click", () => {
-  endOverlay.classList.remove("show");
-  startSession();
-});
-btnPause.addEventListener("click", () => {
-  state.paused = !state.paused;
-  btnPause.textContent = state.paused ? "Resume" : "Pause";
-});
-document.getElementById("btnSkip").addEventListener("click", () => {
-  if(!state.running || state.awaitingNext) return;
-  state.awaitingNext = true;
-  showFeedback("Skipped", "neutral");
-  setTimeout(nextQuestion, 450);
-});
+startBtn.onclick = () => { overlay.style.display="none"; start(); };
+howBtn.onclick = () => { overlay.style.display="flex"; };
+pauseBtn.onclick = () => { state.paused = !state.paused; pauseBtn.textContent = state.paused ? "Resume" : "Pause"; };
+skipBtn.onclick = () => { if(!state.running) return; showFeedback("Skipped", "neutral", 450); nextQ(); };
 
 /* =========================
-   GAME STATE
+   GAME state
 ========================= */
+const SETTINGS = {
+  qCount: Math.min(12, QUESTIONS.length),
+  ballR: 26,
+  fallSpeed: 170,          // px/sec
+  playerW: 70,
+  playerH: 110,
+  netW: 160,
+  netH: 78,
+  feedbackMs: 750
+};
+
 const state = {
   running:false,
   paused:false,
-  awaitingNext:false,
   score:0,
-  qIndex:0,
-  sessionQuestions:[],
-  current:null,
+  qi:0,
+  bank:[],
+  q:null,
   balls:[],
   player:{ x:0, y:0 },
-  // net collision rect (computed)
   input:{ left:false, right:false, dragging:false, targetX:null },
-  log:[]
+  awaiting:false
 };
 
-function shuffle(arr){
-  const a = arr.slice();
-  for(let i=a.length-1;i>0;i--){
+function shuffle(a){
+  const b = a.slice();
+  for(let i=b.length-1;i>0;i--){
     const j = (Math.random()*(i+1))|0;
-    [a[i],a[j]]=[a[j],a[i]];
+    [b[i],b[j]]=[b[j],b[i]];
   }
-  return a;
+  return b;
 }
 
-function startSession(){
-  resizeToCssWorld();
-  state.running = true;
-  state.paused = false;
-  state.awaitingNext = false;
-  btnPause.textContent = "Pause";
-  state.score = 0;
-  state.qIndex = 0;
-  state.log = [];
+function start(){
+  resize();
+  state.running=true;
+  state.paused=false;
+  state.score=0;
+  state.qi=0;
+  state.awaiting=false;
+  pauseBtn.textContent="Pause";
 
-  state.sessionQuestions = shuffle(QUESTIONS).slice(0, SETTINGS.questionsPerSession);
-
-  state.player.x = view.w/2;
+  state.bank = shuffle(QUESTIONS).slice(0, SETTINGS.qCount);
+  state.player.x = view.w * 0.5;
   anchorPlayer();
-
-  loadQuestion(0);
+  loadQ(0);
 }
 
 function anchorPlayer(){
-  state.player.y = view.h - SETTINGS.playerH - 10; // always visible
+  // keep player above footer area
+  const footerH = 74;
+  state.player.y = view.h - footerH - SETTINGS.playerH - 6;
 }
 
-function loadQuestion(idx){
-  state.qIndex = idx;
-  state.current = state.sessionQuestions[idx];
-  bigFeedback.style.display = "none";
+function loadQ(i){
+  state.qi=i;
+  state.q = state.bank[i];
+  state.awaiting=false;
 
-  qTextEl.textContent = state.current.q;
-  optListEl.innerHTML = state.current.options.map((t,i)=>(
-    `<div><b>${LABELS[i]}.</b> ${escapeHtml(t)}</div>`
+  qTextEl.textContent = state.q.q;
+  optListEl.innerHTML = state.q.options.map((t,idx)=>(
+    `<div><b>${LABELS[idx]}.</b> ${escapeHtml(t)}</div>`
   )).join("");
 
   scorePill.textContent = `Score: ${state.score}`;
-  progressPill.textContent = `Question ${idx+1} of ${state.sessionQuestions.length}`;
+  progressPill.textContent = `Question ${i+1} of ${state.bank.length}`;
 
-  // 4 falling balls aligned across screen
-  state.balls = [];
-  const r = SETTINGS.ballR;
-  const pad = Math.max(22, view.w * 0.07);
+  // 4 balls spread across screen
+  const pad = Math.max(26, view.w*0.08);
   const span = view.w - pad*2;
   const step = span / 3;
 
-  for(let i=0;i<4;i++){
+  state.balls = [];
+  for(let k=0;k<4;k++){
     state.balls.push({
-      idx:i,
-      label: LABELS[i],
-      x: pad + step*i,
-      y: SETTINGS.spawnY - i*30,   // slight stagger
-      r,
-      alive:true,
-      vy: SETTINGS.fallSpeed
+      idx:k,
+      label: LABELS[k],
+      x: pad + step*k,
+      y: 120 - k*30,   // start below HUD
+      r: SETTINGS.ballR,
+      alive:true
     });
   }
+}
 
-  state.awaitingNext = false;
+function nextQ(){
+  bigFeedback.style.display="none";
+  state.awaiting=false;
+  const n = state.qi + 1;
+  if(n >= state.bank.length){
+    overlay.style.display="flex";
+    document.querySelector("#card h2").textContent = "Session Completed";
+    document.querySelector("#card p").innerHTML =
+      `Your score: <b>${state.score}</b> (max ${state.bank.length*10}).`;
+    document.querySelector("#card ul").innerHTML =
+      `<li>Press Start to play again.</li>`;
+    startBtn.textContent = "Restart";
+    state.running=false;
+    return;
+  }
+  loadQ(n);
 }
 
 /* =========================
    INPUT
 ========================= */
 window.addEventListener("keydown",(e)=>{
-  if(e.key==="ArrowLeft") state.input.left = true;
-  if(e.key==="ArrowRight") state.input.right = true;
+  if(e.key==="ArrowLeft") state.input.left=true;
+  if(e.key==="ArrowRight") state.input.right=true;
 });
 window.addEventListener("keyup",(e)=>{
-  if(e.key==="ArrowLeft") state.input.left = false;
-  if(e.key==="ArrowRight") state.input.right = false;
+  if(e.key==="ArrowLeft") state.input.left=false;
+  if(e.key==="ArrowRight") state.input.right=false;
 });
 
-function pointerToCssX(clientX){
-  const rect = canvas.getBoundingClientRect();
-  return (clientX - rect.left);
+function pxX(clientX){
+  // full screen canvas, so clientX is CSS pixel coordinate already
+  return clientX;
 }
 canvas.addEventListener("pointerdown",(e)=>{
   canvas.setPointerCapture(e.pointerId);
-  state.input.dragging = true;
-  state.input.targetX = pointerToCssX(e.clientX);
+  state.input.dragging=true;
+  state.input.targetX = pxX(e.clientX);
 });
 canvas.addEventListener("pointermove",(e)=>{
   if(!state.input.dragging) return;
-  state.input.targetX = pointerToCssX(e.clientX);
+  state.input.targetX = pxX(e.clientX);
 });
 canvas.addEventListener("pointerup",()=>{
-  state.input.dragging = false;
-  state.input.targetX = null;
+  state.input.dragging=false;
+  state.input.targetX=null;
 });
 canvas.addEventListener("pointercancel",()=>{
-  state.input.dragging = false;
-  state.input.targetX = null;
+  state.input.dragging=false;
+  state.input.targetX=null;
 });
 
 /* =========================
@@ -397,11 +392,11 @@ canvas.addEventListener("pointercancel",()=>{
 ========================= */
 let last = performance.now();
 requestAnimationFrame(function loop(t){
-  resizeToCssWorld();
-  anchorPlayer();
+  resize();
+  if(state.running) anchorPlayer();
 
   const dt = Math.min(0.033, (t-last)/1000);
-  last = t;
+  last=t;
 
   if(state.running && !state.paused) update(dt);
   draw();
@@ -410,81 +405,51 @@ requestAnimationFrame(function loop(t){
 });
 
 function update(dt){
-  // move player
-  let targetX = state.player.x;
-  if(state.input.left) targetX -= 900*dt;
-  if(state.input.right) targetX += 900*dt;
-  if(state.input.targetX != null) targetX = state.input.targetX;
+  // player movement
+  let tx = state.player.x;
+  if(state.input.left) tx -= 900*dt;
+  if(state.input.right) tx += 900*dt;
+  if(state.input.targetX != null) tx = state.input.targetX;
 
-  state.player.x += (targetX - state.player.x) * Math.min(1, 14*dt);
+  state.player.x += (tx - state.player.x) * Math.min(1, 14*dt);
+  state.player.x = clamp(state.player.x, 60, view.w - 60);
 
-  // clamp
-  const minX = 45;
-  const maxX = view.w - 45;
-  state.player.x = clamp(state.player.x, minX, maxX);
-
-  // fall balls
-  const fall = SETTINGS.fallSpeed * dt;
+  // balls fall
+  const dy = SETTINGS.fallSpeed * dt;
   for(const b of state.balls){
     if(!b.alive) continue;
-    b.y += fall;
+    b.y += dy;
   }
 
-  // collision (ball with net mouth rectangle)
-  if(!state.awaitingNext){
-    const net = getNetRect();
-    const hitBall = state.balls.find(b => b.alive && circleRectHit(b, net));
-    if(hitBall) handleCatch(hitBall);
-  }
+  if(state.awaiting) return;
 
-  // if balls fall beyond bottom without catch, still allow (but question stays until one catch)
+  const net = netRect();
+  const hit = state.balls.find(b => b.alive && circleRectHit(b, net));
+  if(hit) onCatch(hit);
 }
 
-function handleCatch(ball){
-  state.awaitingNext = true;
-  // remove all balls after one catch
-  for(const b of state.balls) b.alive = false;
+function onCatch(ball){
+  state.awaiting=true;
+  for(const b of state.balls) b.alive=false;
 
-  const correct = (ball.idx === state.current.correctIndex);
+  const correct = (ball.idx === state.q.correctIndex);
   if(correct){
     state.score += 10;
-    showFeedback("Correct!", "correct");
+    showFeedback("Correct!", "correct", SETTINGS.feedbackMs);
   }else{
-    const corr = LABELS[state.current.correctIndex];
-    showFeedback(`Wrong! Correct: ${corr}`, "wrong");
+    showFeedback(`Wrong! Correct: ${LABELS[state.q.correctIndex]}`, "wrong", SETTINGS.feedbackMs);
   }
-
-  setTimeout(nextQuestion, SETTINGS.feedbackMs);
+  setTimeout(nextQ, SETTINGS.feedbackMs);
 }
 
-function nextQuestion(){
-  bigFeedback.style.display = "none";
-  state.awaitingNext = false;
-
-  const nxt = state.qIndex + 1;
-  if(nxt >= state.sessionQuestions.length){
-    endSession();
-  }else{
-    loadQuestion(nxt);
-  }
-}
-
-function endSession(){
-  state.running = false;
-  endOverlay.classList.add("show");
-  const total = state.sessionQuestions.length;
-  finalLine.textContent = `Your score: ${state.score} (max ${total*10})`;
-  summaryLine.textContent = state.score >= Math.ceil(total*10*0.7)
-    ? "Summary: Good understanding. Keep practicing."
-    : "Summary: Needs revision. Please review the concepts and try again.";
-}
-
-function showFeedback(text, kind){
+function showFeedback(text, kind, ms){
   bigFeedback.textContent = text;
   bigFeedback.style.display = "block";
   bigFeedback.style.borderColor =
-    kind==="correct" ? "rgba(46,229,157,.75)" :
-    kind==="wrong" ? "rgba(255,77,109,.75)" : "rgba(255,255,255,.25)";
+    kind==="correct" ? "rgba(46,229,157,.80)" :
+    kind==="wrong" ? "rgba(255,77,109,.80)" :
+    "rgba(255,255,255,.25)";
+  if(ms) setTimeout(()=>{ bigFeedback.style.display="none"; }, ms-60);
 }
 
 /* =========================
@@ -493,29 +458,19 @@ function showFeedback(text, kind){
 function draw(){
   ctx.clearRect(0,0,view.w,view.h);
 
-  // subtle ground line so you can see bottom zone
-  ctx.save();
-  ctx.globalAlpha = 0.25;
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, view.h - 6);
-  ctx.lineTo(view.w, view.h - 6);
-  ctx.stroke();
-  ctx.restore();
-
   // balls
   for(const b of state.balls){
     if(!b.alive) continue;
     drawBall(b);
   }
 
-  // player + net ALWAYS drawn
-  drawPlayerWithNet();
+  // always draw player + net (even in overlay)
+  drawPlayerNet();
 }
 
 function drawBall(b){
   const pal = COLORS[b.idx];
+
   // glow
   ctx.save();
   ctx.globalAlpha = 0.22;
@@ -538,37 +493,32 @@ function drawBall(b){
   ctx.strokeStyle = "rgba(255,255,255,.35)";
   ctx.stroke();
 
-  // label
-  ctx.fillStyle = "rgba(8,16,36,.85)";
+  ctx.fillStyle = "rgba(6,10,22,.90)";
   ctx.font = "900 16px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(b.label, b.x, b.y);
 }
 
-function drawPlayerWithNet(){
+function drawPlayerNet(){
   const px = state.player.x;
-  const py = state.player.y;
+  const py = state.player.y || (view.h - 74 - SETTINGS.playerH - 6);
 
-  // Player body (simple cartoon)
-  // shadow base
+  // shadow
   ctx.save();
   ctx.globalAlpha = 0.35;
   ctx.fillStyle = "rgba(0,0,0,.45)";
   ctx.beginPath();
-  ctx.ellipse(px, py + SETTINGS.playerH + 6, 46, 14, 0, 0, Math.PI*2);
+  ctx.ellipse(px, py + SETTINGS.playerH + 10, 46, 14, 0, 0, Math.PI*2);
   ctx.fill();
   ctx.restore();
 
   // legs
-  ctx.lineWidth = 10;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "rgba(255,255,255,.35)";
+  ctx.lineWidth = 10; ctx.lineCap="round";
+  ctx.strokeStyle = "rgba(255,255,255,.32)";
   ctx.beginPath();
-  ctx.moveTo(px - 14, py + 84);
-  ctx.lineTo(px - 22, py + 108);
-  ctx.moveTo(px + 14, py + 84);
-  ctx.lineTo(px + 22, py + 108);
+  ctx.moveTo(px - 14, py + 84); ctx.lineTo(px - 22, py + 108);
+  ctx.moveTo(px + 14, py + 84); ctx.lineTo(px + 22, py + 108);
   ctx.stroke();
 
   // torso
@@ -590,81 +540,55 @@ function drawPlayerWithNet(){
   ctx.strokeStyle = "rgba(255,255,255,.35)";
   ctx.stroke();
 
-  // arm holding net (to the right)
+  // arm
   ctx.lineWidth = 10;
-  ctx.strokeStyle = "rgba(255,255,255,.40)";
+  ctx.strokeStyle = "rgba(255,255,255,.38)";
   ctx.beginPath();
   ctx.moveTo(px+18, py+52);
   ctx.lineTo(px+48, py+38);
   ctx.stroke();
 
-  // NET (volleyball-goal style) - very visible
-  const net = getNetRect();
-
-  // net frame
+  // net
+  const net = netRectFor(px, py);
   const frameG = ctx.createLinearGradient(net.x, net.y, net.x+net.w, net.y+net.h);
   frameG.addColorStop(0, "rgba(255,90,200,.95)");
   frameG.addColorStop(1, "rgba(0,255,210,.95)");
+
   roundRect(net.x, net.y, net.w, net.h, 14);
-  ctx.fillStyle = "rgba(0,0,0,.25)";
+  ctx.fillStyle = "rgba(0,0,0,.22)";
   ctx.fill();
   ctx.lineWidth = 4;
   ctx.strokeStyle = frameG;
   ctx.stroke();
 
-  // net mesh
+  // mesh
   ctx.save();
-  ctx.globalAlpha = 0.65;
+  ctx.globalAlpha = 0.70;
   ctx.strokeStyle = "rgba(255,255,255,.45)";
   ctx.lineWidth = 1.2;
 
   const cols = 7, rows = 4;
   for(let i=1;i<cols;i++){
     const x = net.x + (net.w/cols)*i;
-    ctx.beginPath();
-    ctx.moveTo(x, net.y+6);
-    ctx.lineTo(x, net.y+net.h-6);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, net.y+6); ctx.lineTo(x, net.y+net.h-6); ctx.stroke();
   }
   for(let j=1;j<rows;j++){
     const y = net.y + (net.h/rows)*j;
-    ctx.beginPath();
-    ctx.moveTo(net.x+6, y);
-    ctx.lineTo(net.x+net.w-6, y);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(net.x+6, y); ctx.lineTo(net.x+net.w-6, y); ctx.stroke();
   }
-  ctx.restore();
-
-  // small “target” marker to prove it exists
-  ctx.save();
-  ctx.globalAlpha = 0.95;
-  ctx.fillStyle = "rgba(255,255,255,.85)";
-  ctx.font = "900 12px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("NET", net.x + net.w/2, net.y + net.h/2);
   ctx.restore();
 }
 
-/* =========================
-   COLLISION
-========================= */
-function getNetRect(){
-  // net is attached to player’s right hand
-  const px = state.player.x;
-  const py = state.player.y;
-
-  const w = SETTINGS.catcherNetW;
-  const h = SETTINGS.catcherNetH;
-
-  const x = px + 55;       // offset from torso
-  const y = py + 14;       // aligned near shoulder
-
-  return { x, y, w, h };
+function netRect(){
+  return netRectFor(state.player.x, state.player.y);
+}
+function netRectFor(px, py){
+  const y = (py || (view.h - 74 - SETTINGS.playerH - 6)) + 12;
+  return { x: px + 55, y, w: SETTINGS.netW, h: SETTINGS.netH };
 }
 
 function circleRectHit(c, r){
-  const cx = c.x, cy = c.y;
+  const cx=c.x, cy=c.y;
   const closestX = clamp(cx, r.x, r.x + r.w);
   const closestY = clamp(cy, r.y, r.y + r.h);
   const dx = cx - closestX;
@@ -672,9 +596,7 @@ function circleRectHit(c, r){
   return (dx*dx + dy*dy) <= (c.r*c.r);
 }
 
-/* =========================
-   HELPERS
-========================= */
+/* helpers */
 function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 function roundRect(x,y,w,h,r){
   const rr = Math.min(r, w/2, h/2);
@@ -699,10 +621,7 @@ function escapeHtml(s){
   }[m]));
 }
 
-/* show a visible player+net even before pressing start */
-resizeToCssWorld();
-state.player.x = view.w/2;
-anchorPlayer();
+/* show player+net immediately */
 draw();
 </script>
 </body>
