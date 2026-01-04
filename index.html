@@ -1,1 +1,744 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Catch the Right One (Social Engineering)</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #0b1220;
+      color: #e8eefc;
+      overflow: hidden;
+    }
+    #wrap { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; width: 100vw; }
 
+    #hud {
+      padding: 12px 14px 10px;
+      background: linear-gradient(180deg, rgba(12,20,40,0.95), rgba(12,20,40,0.55));
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    #row1 { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .pill {
+      padding: 6px 10px; border-radius: 999px; font-size: 13px;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); white-space: nowrap;
+    }
+    #questionBox {
+      padding: 10px 12px; border-radius: 12px;
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+      font-size: 16px; line-height: 1.35; max-width: 1100px; margin: 0 auto;
+    }
+    #questionBox b { color: #ffffff; }
+
+    #stage { position: relative; width: 100%; height: 100%; }
+    canvas {
+      width: 100%; height: 100%; display: block; touch-action: none;
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(73,132,255,0.22), transparent 55%),
+        radial-gradient(800px 500px at 85% 40%, rgba(245,124,179,0.18), transparent 55%),
+        linear-gradient(180deg, #0b1220, #071025);
+    }
+
+    #footer {
+      padding: 10px 14px;
+      background: linear-gradient(0deg, rgba(12,20,40,0.95), rgba(12,20,40,0.55));
+      border-top: 1px solid rgba(255,255,255,0.08);
+      display: flex; gap: 10px; align-items: center; justify-content: space-between;
+    }
+    #tips { font-size: 12px; opacity: 0.9; }
+    #btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    button {
+      appearance: none; border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.10); color: #e8eefc;
+      padding: 8px 10px; border-radius: 10px; font-size: 13px; cursor: pointer;
+    }
+    button:hover { background: rgba(255,255,255,0.14); }
+    button:active { transform: translateY(1px); }
+
+    .overlay {
+      position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+      padding: 18px; background: rgba(0,0,0,0.55); backdrop-filter: blur(6px);
+    }
+    .overlay.show { display: flex; }
+    .card {
+      width: min(720px, 96vw); border-radius: 16px; padding: 16px 16px 14px;
+      background: rgba(15,24,48,0.95); border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+    .card h2 { margin: 0 0 8px; font-size: 18px; letter-spacing: 0.2px; }
+    .card p, .card li { font-size: 14px; line-height: 1.45; opacity: 0.95; }
+    .card ul { margin: 10px 0 0 18px; }
+    .card .row { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-top: 12px; flex-wrap: wrap; }
+    .muted { opacity: 0.85; }
+
+    #bigFeedback {
+      position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%);
+      font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; letter-spacing: 0.5px;
+      padding: 10px 16px; border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.20); background: rgba(10,18,36,0.60);
+      display: none; pointer-events: none; text-align: center; max-width: 92vw;
+    }
+    @media (max-width: 520px) { #questionBox { font-size: 15px; } #tips { display: none; } }
+  </style>
+</head>
+
+<body>
+<div id="wrap">
+  <div id="hud">
+    <div id="row1">
+      <div class="pill" id="scorePill">Score: 0</div>
+      <div class="pill" id="progressPill">Question 1 of 12</div>
+      <div class="pill" id="modePill">Catch: 1 option</div>
+    </div>
+    <div id="questionBox">
+      <b>Question:</b> <span id="qText">Loading…</span>
+    </div>
+  </div>
+
+  <div id="stage">
+    <canvas id="game" width="900" height="520"></canvas>
+
+    <div id="bigFeedback"></div>
+
+    <div class="overlay show" id="startOverlay">
+      <div class="card">
+        <h2>Catch the Right One (Social Engineering)</h2>
+        <p class="muted">
+          A question appears at the top. Four options will fall. Move the catcher and catch the <b>correct</b> option.
+          You can catch <b>only one</b> option per question. Speed is not important.
+        </p>
+        <ul>
+          <li><b>Desktop:</b> Left / Right arrow keys</li>
+          <li><b>Mobile:</b> Drag the catcher left or right</li>
+        </ul>
+        <div class="row">
+          <span class="muted">Tip: Read first, then move.</span>
+          <button id="btnStart">Start</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="endOverlay">
+      <div class="card">
+        <h2>Session Completed</h2>
+        <p id="finalLine" class="muted"></p>
+        <p id="summaryLine" class="muted"></p>
+        <div class="row">
+          <button id="btnReview">Show review</button>
+          <button id="btnRestart">Restart</button>
+        </div>
+        <div id="reviewBox" style="display:none; margin-top: 10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">
+    <div id="tips">Use arrows (desktop) or drag the catcher (mobile). Catch one option only.</div>
+    <div id="btns">
+      <button id="btnPause">Pause</button>
+      <button id="btnSkip">Skip</button>
+      <button id="btnHow">How to play</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   QUESTIONS BASED ON THE ATTACHED UNIT "SOCIAL ENGINEERING"
+   Source: Social Engineering unit (Unit IV) :contentReference[oaicite:0]{index=0}
+   correctIndex: 0=A, 1=B, 2=C, 3=D
+========================================================= */
+const QUESTIONS = [
+  {
+    q: "Social engineering is mainly the art of:",
+    options: [
+      "Psychologically manipulating people to obtain confidential information",
+      "Upgrading hardware to stop viruses",
+      "Encrypting every file on a device",
+      "Writing code to exploit buffer overflow"
+    ],
+    correctIndex: 0,
+    feedback: "It focuses on manipulating humans (often the weakest link) rather than breaking technology."
+  },
+  {
+    q: "Which phase in the social engineering attack cycle comes first?",
+    options: ["Exploit trust factor", "Research", "Cloak activities", "Utilise & execute"],
+    correctIndex: 1,
+    feedback: "Attackers gather information about the target before approaching them."
+  },
+  {
+    q: "In the attack cycle, 'Developing rapport and trust' mainly aims to:",
+    options: [
+      "Install malware automatically",
+      "Make the victim doubt all coworkers",
+      "Increase bandwidth for the attacker",
+      "Make the target more likely to share information or do a requested action"
+    ],
+    correctIndex: 3,
+    feedback: "Trust makes targets more willing to cooperate or reveal small details."
+  },
+  {
+    q: "When the attacker abuses the already-established relationship to obtain the desired info/action, it is:",
+    options: ["Exploiting trust factor", "Evolve/regress", "Research", "Waste management"],
+    correctIndex: 0,
+    feedback: "This is the stage where trust is actively used against the victim."
+  },
+  {
+    q: "Social engineering attacks are broadly split into which three categories in the unit?",
+    options: [
+      "Hardware, software, firmware",
+      "Physical, remote, and hybrid",
+      "Email, SMS, and VoIP only",
+      "Open-source, closed-source, and freeware"
+    ],
+    correctIndex: 1,
+    feedback: "The unit groups them as physical, remote, and hybrid social engineering."
+  },
+  {
+    q: "Piggybacking in physical social engineering refers to:",
+    options: [
+      "Entering a restricted area by convincing/using an authorized person",
+      "Listening to private conversations",
+      "Throwing documents into the trash",
+      "Sending fake bank emails"
+    ],
+    correctIndex: 0,
+    feedback: "Piggybacking is about gaining physical access using another person’s authorization."
+  },
+  {
+    q: "Which physical method involves obtaining useful information from trash, printers, or discarded papers?",
+    options: ["Impersonation", "Dumpster driving", "Vishing", "Pop-up interception"],
+    correctIndex: 1,
+    feedback: "Dumpster driving exploits poor disposal of sensitive information."
+  },
+  {
+    q: "Reverse social engineering is best described as:",
+    options: [
+      "Victim asks the attacker for help due to a scenario created by the attacker",
+      "Attacker deletes all evidence immediately after entry",
+      "Attacker only uses email and never phone",
+      "Victim uses strong passwords to stop phishing"
+    ],
+    correctIndex: 0,
+    feedback: "The attacker sets up a problem and positions themselves as the solution."
+  },
+  {
+    q: "Phishing is best explained as a 'bait-and-hook' approach where:",
+    options: [
+      "The bait is a USB drive and the hook is a printer",
+      "The bait is the email message and the hook is the method to capture victim’s information",
+      "The bait is strong encryption and the hook is a firewall",
+      "The bait is a password policy and the hook is a data classification label"
+    ],
+    correctIndex: 1,
+    feedback: "Email lures victims, and links/phones/sites are used to capture information."
+  },
+  {
+    q: "Phishing that is customized and targeted at a particular individual is called:",
+    options: ["Whale phishing", "419 scam", "Spear phishing", "Diversion theft"],
+    correctIndex: 2,
+    feedback: "Targeted phishing with background research is spear phishing."
+  },
+  {
+    q: "IVR or phone phishing is also known as:",
+    options: ["Vishing", "Smishing", "Eavesdropping", "Piggybacking"],
+    correctIndex: 0,
+    feedback: "Vishing uses voice/IVR to trick users into entering credentials or account data."
+  },
+  {
+    q: "A 'road apple' attack usually involves:",
+    options: [
+      "A series of false alarms to reduce response later",
+      "Leaving a storage device (USB/CD) hoping staff plug it in",
+      "Pretending to be speech-impaired on a call",
+      "Redirecting the victim to a bank’s real website"
+    ],
+    correctIndex: 1,
+    feedback: "It is baiting with physical media to trigger execution of a payload."
+  }
+];
+
+/* =========================================================
+   GAME SETTINGS (simple + low cognitive load)
+========================================================= */
+const SETTINGS = {
+  questionsPerSession: Math.min(12, QUESTIONS.length),
+  fallSpeed: 140,
+  spawnY: -80,
+  catcherWidth: 150,
+  catcherHeight: 28,
+  optionW: 210,
+  optionH: 64,
+  feedbackMs: 550,
+  shakeMs: 220,
+  maxDt: 0.032
+};
+
+/* =========================================================
+   CANVAS + UI
+========================================================= */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvasToDisplaySize() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+  const w = Math.floor(rect.width * dpr);
+  const h = Math.floor(rect.height * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+}
+window.addEventListener("resize", resizeCanvasToDisplaySize);
+
+const qTextEl = document.getElementById("qText");
+const scorePill = document.getElementById("scorePill");
+const progressPill = document.getElementById("progressPill");
+
+const startOverlay = document.getElementById("startOverlay");
+const endOverlay = document.getElementById("endOverlay");
+const bigFeedback = document.getElementById("bigFeedback");
+const finalLine = document.getElementById("finalLine");
+const summaryLine = document.getElementById("summaryLine");
+const reviewBox = document.getElementById("reviewBox");
+
+document.getElementById("btnStart").addEventListener("click", () => {
+  startOverlay.classList.remove("show");
+  startNewSession();
+});
+document.getElementById("btnRestart").addEventListener("click", () => {
+  endOverlay.classList.remove("show");
+  reviewBox.style.display = "none";
+  startNewSession();
+});
+document.getElementById("btnReview").addEventListener("click", () => {
+  reviewBox.style.display = (reviewBox.style.display === "none") ? "block" : "none";
+});
+document.getElementById("btnHow").addEventListener("click", () => {
+  startOverlay.classList.add("show");
+});
+
+const btnPause = document.getElementById("btnPause");
+btnPause.addEventListener("click", () => {
+  state.paused = !state.paused;
+  btnPause.textContent = state.paused ? "Resume" : "Pause";
+});
+document.getElementById("btnSkip").addEventListener("click", () => {
+  if (!state.running || state.awaitingNext) return;
+  recordAttempt(null, false, "Skipped");
+  nextQuestion();
+});
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+const state = {
+  running: false,
+  paused: false,
+  awaitingNext: false,
+  score: 0,
+  qIndex: 0,
+  sessionQuestions: [],
+  current: null,
+  optionsFalling: [],
+  catcher: { x: 0, y: 0 },
+  input: { left: false, right: false, targetX: null, dragging: false },
+  fx: { flash: null, flashT: 0, shakeT: 0, shakeAmp: 0 },
+  log: []
+};
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startNewSession() {
+  state.running = true;
+  state.paused = false;
+  btnPause.textContent = "Pause";
+  state.score = 0;
+  state.qIndex = 0;
+  state.log = [];
+
+  const picked = shuffle(QUESTIONS).slice(0, SETTINGS.questionsPerSession);
+  state.sessionQuestions = picked;
+
+  resizeCanvasToDisplaySize();
+  state.catcher.y = canvas.height - Math.floor(70 * (window.devicePixelRatio || 1));
+  state.catcher.x = canvas.width / 2;
+
+  loadQuestion(0);
+}
+
+function loadQuestion(idx) {
+  state.qIndex = idx;
+  state.current = state.sessionQuestions[idx];
+
+  qTextEl.textContent = state.current.q;
+  scorePill.textContent = `Score: ${state.score}`;
+  progressPill.textContent = `Question ${idx + 1} of ${state.sessionQuestions.length}`;
+
+  state.optionsFalling = [];
+  const labels = ["A", "B", "C", "D"];
+
+  const pad = Math.max(10, Math.floor(canvas.width * 0.04));
+  const scale = Math.min(1, canvas.width / 980);
+  const ow = Math.floor(SETTINGS.optionW * scale);
+  const oh = Math.floor(SETTINGS.optionH * scale);
+
+  const totalW = 4 * ow;
+  const gap = Math.max(14, Math.floor((canvas.width - pad * 2 - totalW) / 3));
+  const startX = Math.max(pad, (canvas.width - (4 * ow + 3 * gap)) / 2);
+  const rowY = SETTINGS.spawnY * (window.devicePixelRatio || 1);
+
+  for (let i = 0; i < 4; i++) {
+    const x = startX + i * (ow + gap);
+    state.optionsFalling.push({
+      idx: i,
+      label: labels[i],
+      text: state.current.options[i],
+      x, y: rowY, w: ow, h: oh,
+      alive: true
+    });
+  }
+
+  state.awaitingNext = false;
+}
+
+function endSession() {
+  state.running = false;
+  endOverlay.classList.add("show");
+
+  const correctCount = state.log.filter(r => r.correct).length;
+  finalLine.textContent = `Your score: ${state.score} | Correct: ${correctCount}/${state.sessionQuestions.length}`;
+  summaryLine.textContent = correctCount >= Math.ceil(state.sessionQuestions.length * 0.7)
+    ? "Summary: Good understanding. Keep practicing to retain concepts."
+    : "Summary: Needs revision. Review the feedback and try again.";
+
+  const html = state.log.map((r, i) => {
+    const tag = r.correct ? "✅ Correct" : "❌ Wrong";
+    const chosen = (r.chosenLabel ? `${r.chosenLabel}. ${escapeHtml(r.chosenText)}` : "Skipped");
+    const correct = `${r.correctLabel}. ${escapeHtml(r.correctText)}`;
+    const fb = escapeHtml(r.feedback || "");
+    return `
+      <div style="padding:10px 10px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); margin: 8px 0;">
+        <div style="font-weight:700; margin-bottom:6px;">Q${i+1}. ${escapeHtml(r.q)}</div>
+        <div style="opacity:0.95; font-size:13px; line-height:1.45;">
+          <div>${tag}</div>
+          <div><b>Your pick:</b> ${chosen}</div>
+          <div><b>Correct:</b> ${correct}</div>
+          ${fb ? `<div><b>Feedback:</b> ${fb}</div>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  reviewBox.innerHTML = html || "<div class='muted'>No attempts recorded.</div>";
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"
+  }[m]));
+}
+
+/* =========================================================
+   INPUT
+========================================================= */
+window.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft") state.input.left = true;
+  if (e.key === "ArrowRight") state.input.right = true;
+});
+window.addEventListener("keyup", (e) => {
+  if (e.key === "ArrowLeft") state.input.left = false;
+  if (e.key === "ArrowRight") state.input.right = false;
+});
+
+function pointerToCanvasX(clientX) {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = canvas.width / rect.width;
+  return (clientX - rect.left) * dpr;
+}
+
+canvas.addEventListener("pointerdown", (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  state.input.dragging = true;
+  state.input.targetX = pointerToCanvasX(e.clientX);
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!state.input.dragging) return;
+  state.input.targetX = pointerToCanvasX(e.clientX);
+});
+canvas.addEventListener("pointerup", () => {
+  state.input.dragging = false;
+  state.input.targetX = null;
+});
+canvas.addEventListener("pointercancel", () => {
+  state.input.dragging = false;
+  state.input.targetX = null;
+});
+
+/* =========================================================
+   LOOP
+========================================================= */
+let lastTs = performance.now();
+function loop(ts) {
+  resizeCanvasToDisplaySize();
+  const dt = Math.min(SETTINGS.maxDt, (ts - lastTs) / 1000);
+  lastTs = ts;
+
+  if (state.running && !state.paused) update(dt);
+  draw();
+
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+function update(dt) {
+  const speed = 620 * dt;
+  let targetX = state.catcher.x;
+
+  if (state.input.left) targetX -= speed * 10;
+  if (state.input.right) targetX += speed * 10;
+  if (state.input.targetX != null) targetX = state.input.targetX;
+
+  state.catcher.x += (targetX - state.catcher.x) * Math.min(1, 14 * dt);
+
+  const dpr = (window.devicePixelRatio || 1);
+  const halfW = SETTINGS.catcherWidth * dpr / 2;
+  state.catcher.x = clamp(state.catcher.x, halfW + 8, canvas.width - halfW - 8);
+
+  const fall = SETTINGS.fallSpeed * dt * dpr;
+  for (const o of state.optionsFalling) {
+    if (!o.alive) continue;
+    o.y += fall;
+  }
+
+  if (!state.awaitingNext) {
+    const caught = state.optionsFalling.find(o => o.alive && rectHit(o, catcherRect()));
+    if (caught) handleCatch(caught);
+  }
+
+  if (state.fx.flashT > 0) state.fx.flashT -= dt;
+  if (state.fx.shakeT > 0) state.fx.shakeT -= dt;
+}
+
+function handleCatch(opt) {
+  state.awaitingNext = true;
+  for (const o of state.optionsFalling) o.alive = false;
+
+  const correct = (opt.idx === state.current.correctIndex);
+
+  if (correct) {
+    state.score += 10;
+    flashFX("correct");
+    showBigFeedback("Correct!", "correct");
+  } else {
+    flashFX("wrong");
+    shakeFX();
+    const corrLabel = ["A","B","C","D"][state.current.correctIndex];
+    showBigFeedback(`Wrong! Correct: ${corrLabel}`, "wrong");
+  }
+
+  recordAttempt(opt, correct);
+
+  setTimeout(() => nextQuestion(), SETTINGS.feedbackMs);
+}
+
+function recordAttempt(opt, correct, overrideFeedback) {
+  const labels = ["A","B","C","D"];
+  const cIdx = state.current.correctIndex;
+
+  state.log.push({
+    q: state.current.q,
+    correct,
+    chosenLabel: opt ? labels[opt.idx] : null,
+    chosenText: opt ? state.current.options[opt.idx] : null,
+    correctLabel: labels[cIdx],
+    correctText: state.current.options[cIdx],
+    feedback: overrideFeedback || state.current.feedback || ""
+  });
+
+  scorePill.textContent = `Score: ${state.score}`;
+}
+
+function nextQuestion() {
+  bigFeedback.style.display = "none";
+  state.awaitingNext = false;
+
+  const next = state.qIndex + 1;
+  if (next >= state.sessionQuestions.length) endSession();
+  else loadQuestion(next);
+}
+
+/* =========================================================
+   DRAW
+========================================================= */
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  let shakeX = 0, shakeY = 0;
+  if (state.fx.shakeT > 0) {
+    const t = state.fx.shakeT;
+    const amp = state.fx.shakeAmp;
+    shakeX = (Math.random() - 0.5) * amp * (t / (SETTINGS.shakeMs/1000));
+    shakeY = (Math.random() - 0.5) * amp * (t / (SETTINGS.shakeMs/1000));
+  }
+
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+
+  if (state.fx.flashT > 0 && state.fx.flash) {
+    const a = clamp(state.fx.flashT / 0.22, 0, 1) * 0.22;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.fillStyle = (state.fx.flash === "correct") ? "#2ee59d" : "#ff4d6d";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+
+  for (const o of state.optionsFalling) if (o.alive) drawOption(o);
+  drawCatcher();
+
+  ctx.restore();
+}
+
+function drawOption(o) {
+  const dpr = (window.devicePixelRatio || 1);
+  const r = 16 * dpr;
+  const grad = ctx.createLinearGradient(o.x, o.y, o.x + o.w, o.y + o.h);
+  grad.addColorStop(0, "rgba(255,255,255,0.16)");
+  grad.addColorStop(1, "rgba(255,255,255,0.06)");
+
+  roundRect(o.x, o.y, o.w, o.h, r);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.lineWidth = 2 * dpr;
+  ctx.strokeStyle = "rgba(255,255,255,0.18)";
+  ctx.stroke();
+
+  const badge = 30 * dpr;
+  roundRect(o.x + 10*dpr, o.y + 10*dpr, badge, badge, 10*dpr);
+  ctx.fillStyle = "rgba(73,132,255,0.35)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.16)";
+  ctx.stroke();
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `${Math.floor(16*dpr)}px system-ui, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(o.label, o.x + 10*dpr + badge/2, o.y + 10*dpr + badge/2);
+
+  ctx.fillStyle = "rgba(232,238,252,0.98)";
+  ctx.font = `${Math.floor(14*dpr)}px system-ui, sans-serif`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+
+  const tx = o.x + (10 + 30 + 10) * dpr;
+  const ty = o.y + 12 * dpr;
+  const maxW = o.w - (10 + 30 + 20) * dpr;
+  wrapText(o.text, tx, ty, maxW, Math.floor(18*dpr));
+}
+
+function drawCatcher() {
+  const dpr = (window.devicePixelRatio || 1);
+  const w = SETTINGS.catcherWidth * dpr;
+  const h = SETTINGS.catcherHeight * dpr;
+  const x = state.catcher.x - w/2;
+  const y = state.catcher.y;
+
+  const r = 14 * dpr;
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, "rgba(245,124,179,0.35)");
+  grad.addColorStop(1, "rgba(73,132,255,0.35)");
+  roundRect(x, y, w, h, r);
+  ctx.fillStyle = grad;
+  ctx.fill();
+  ctx.lineWidth = 2 * dpr;
+  ctx.strokeStyle = "rgba(255,255,255,0.20)";
+  ctx.stroke();
+
+  roundRect(x + 10*dpr, y - 10*dpr, w - 20*dpr, 14*dpr, 10*dpr);
+  ctx.fillStyle = "rgba(255,255,255,0.10)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.14)";
+  ctx.stroke();
+
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.beginPath();
+  ctx.ellipse(state.catcher.x, y + h + 26*dpr, w*0.46, 14*dpr, 0, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fill();
+  ctx.restore();
+}
+
+/* =========================================================
+   FX + HELPERS
+========================================================= */
+function flashFX(kind) { state.fx.flash = kind; state.fx.flashT = 0.22; }
+function shakeFX() { state.fx.shakeT = SETTINGS.shakeMs / 1000; state.fx.shakeAmp = 10 * (window.devicePixelRatio || 1); }
+function showBigFeedback(text, kind) {
+  bigFeedback.textContent = text;
+  bigFeedback.style.display = "block";
+  bigFeedback.style.borderColor = kind === "correct" ? "rgba(46,229,157,0.6)" : "rgba(255,77,109,0.6)";
+}
+
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+function catcherRect() {
+  const dpr = (window.devicePixelRatio || 1);
+  const w = SETTINGS.catcherWidth * dpr;
+  const h = SETTINGS.catcherHeight * dpr;
+  return { x: state.catcher.x - w/2, y: state.catcher.y - 6*dpr, w: w, h: h + 10*dpr };
+}
+function rectHit(a, b) {
+  return (a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y);
+}
+function roundRect(x, y, w, h, r) {
+  const rr = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+}
+function wrapText(text, x, y, maxWidth, lineHeight) {
+  const words = String(text).split(" ");
+  let line = "";
+  let yy = y;
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + " ";
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line.trim(), x, yy);
+      line = words[n] + " ";
+      yy += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line.trim(), x, yy);
+}
+
+/* =========================================================
+   INITIAL
+========================================================= */
+qTextEl.textContent = "Press Start to begin.";
+resizeCanvasToDisplaySize();
+state.catcher.y = canvas.height - Math.floor(70 * (window.devicePixelRatio || 1));
+state.catcher.x = canvas.width / 2;
+</script>
+</body>
+</html>
